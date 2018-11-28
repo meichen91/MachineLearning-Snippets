@@ -2,7 +2,9 @@
 title: "Dumbell Classification"
 author: "Meichen Lu"
 date: "11/28/2018"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ## Introduction
@@ -86,6 +88,23 @@ The 19 misclassified examples are shown below and an accuracy of 99.5% is satisf
 ```{r}
 table(pred, validation$classe)
 ```
+We further verify the accuracy using cross-validation
+```{r, cache = TRUE}
+set.seed(123)
+folds <- createFolds(y = df_train$classe, k = 10, list = TRUE, returnTrain = FALSE)
+acc_all = NULL
+for (fold in folds){
+    validation = df_train[fold,]
+    rf = randomForest(classe ~ ., df_train[-fold,])
+    pred = predict(rf, validation)
+    acc_all = append(acc_all, mean(pred == validation$classe))
+}
+acc_all
+```
+The 95% confidence interval of the out-of-sample accuracy can be estimated from the 10-fold cross validation to be
+```{r}
+mean(acc_all) + c(-1, 1) * qt(0.975, df = 9) * sd(acc_all)/sqrt(10)
+```
 
 
 ## Random forest model
@@ -114,6 +133,6 @@ Then we use this model to predict the class of the test dataset.
 predict(rf_base, df_test, 'class')
 ```
 ## Summary
-In this study, we built classification models for the dumbell exercise using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Random forest model outperforms decision tree and multinomial regression. It indicates that there are nonlinear relationship between features. By visualising the most important features from random forest model, the nonlinear relationship is confirmed. 
+In this study, we built classification models for the dumbell exercise using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Random forest model outperforms decision tree and multinomial regression and the 95% confidence interval of the accuracy is estimated using cross validation to be $[0.995, 0.998]$. It indicates that there are nonlinear relationship between features. By visualising the most important features from random forest model, the nonlinear relationship is confirmed. 
 
 

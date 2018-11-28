@@ -120,6 +120,34 @@ table(pred, validation$classe)
 ##    D    0    0    0  633    0
 ##    E    0    0    0    1  720
 ```
+We further verify the accuracy using cross-validation
+
+```r
+set.seed(123)
+folds <- createFolds(y = df_train$classe, k = 10, list = TRUE, returnTrain = FALSE)
+acc_all = NULL
+for (fold in folds){
+    validation = df_train[fold,]
+    rf = randomForest(classe ~ ., df_train[-fold,])
+    pred = predict(rf, validation)
+    acc_all = append(acc_all, mean(pred == validation$classe))
+}
+acc_all
+```
+
+```
+##  [1] 0.9959225 0.9989801 0.9938869 0.9969419 0.9974542 0.9979613 0.9964322
+##  [8] 0.9964304 0.9943963 0.9969419
+```
+The 95% confidence interval of the out-of-sample accuracy can be estimated from the 10-fold cross validation to be
+
+```r
+mean(acc_all) + c(-1, 1) * qt(0.975, df = 9) * sd(acc_all)/sqrt(10)
+```
+
+```
+## [1] 0.9954376 0.9976320
+```
 
 
 ## Random forest model
@@ -134,7 +162,7 @@ g <- g + geom_bar(stat='identity', col = 2, fill = 2) + coord_flip() +
 g
 ```
 
-![](Dumbell_Classification_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](Dumbell_Classification_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 Then the 4 most important features are plotted, colored according to the class label (A to E). It is likely that the features are continuous readings during the movement. At different stage of the motion, different feature may be important. For `roll_belt`, it is most discriminating for class E from the other classes and the `pitch_forearm` is important for differentiating class A. Given the performance of the classifier, we can conclude that random forest achieves accurate prediction at different stages of the motion by capturing the nonlinear interaction of the features.
 
@@ -147,7 +175,7 @@ plot(df_train$magnet_dumbbell_z, col = df_train$classe, xlab = 'index',
 plot(df_train$pitch_forearm, col = df_train$classe, xlab = 'index', ylab = 'pitch_forearm')
 ```
 
-![](Dumbell_Classification_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](Dumbell_Classification_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 Then we use this model to predict the class of the test dataset.
 
@@ -161,6 +189,6 @@ predict(rf_base, df_test, 'class')
 ## Levels: A B C D E
 ```
 ## Summary
-In this study, we built classification models for the dumbell exercise using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Random forest model outperforms decision tree and multinomial regression. It indicates that there are nonlinear relationship between features. By visualising the most important features from random forest model, the nonlinear relationship is confirmed. 
+In this study, we built classification models for the dumbell exercise using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. Random forest model outperforms decision tree and multinomial regression and the 95% confidence interval of the accuracy is estimated using cross validation to be $[0.995, 0.998]$. It indicates that there are nonlinear relationship between features. By visualising the most important features from random forest model, the nonlinear relationship is confirmed. 
 
 
