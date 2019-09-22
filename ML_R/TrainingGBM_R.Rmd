@@ -1,0 +1,72 @@
+---
+title: "GBM Tutorial"
+output: html_notebook
+---
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+```
+
+
+```{r}
+data("bodyfat",package = "TH.data")
+dat <- bodyfat
+dat$Response <- dat$DEXfat
+set.seed(1234)
+ind<-sample(2,nrow(dat),replace = T,prob = c(0.7,0.3))
+train<-dat[ind==1,]
+validation<-dat[ind==2,]
+myFormula<-Response~age+waistcirc+hipcirc+elbowbreadth+kneebreadth
+rpart_fit<-rpart(myFormula,data = train,control = rpart.control(minsplit = 2, maxdepth = 3, cp = -1))
+```
+
+```{r}
+rpart.plot(rpart_fit,border.col="blue", split.col="red",
+           split.cex=1.2, main="Decision tree for bodyfat")
+```
+
+
+```{r}
+rsq.rpart(rpart_fit) # cross-validation results 
+```
+```{r}
+validation$Predicted <- predict(rpart_fit, newdata = validation, type = 'vector')
+cor(validation$Predicted, validation$Response)^2
+```
+```{r}
+maxdepth_list <- c(1:8)
+results_summary <- data.frame(maxdepth = maxdepth_list,
+                              train_r2 = 0,
+                              validation_r2 = 0)
+for (i in maxdepth_list){
+    rpart_fit<-rpart(myFormula,data = train,control = rpart.control(minsplit = 2, maxdepth = i, cp = -1))
+    results_summary$train_r2[i] = cor(predict(rpart_fit,type = 'vector'), train$Response)^2
+    results_summary$validation_r2[i] = cor(predict(rpart_fit, newdata = validation, type = 'vector'), validation$Response)^2
+}
+```
+
+```{r}
+plot(results_summary$maxdepth, results_summary$train_r2, lwd = 5, type = 'l', 
+     xlab = 'tree depth', ylab = 'R2')
+lines(results_summary$maxdepth, results_summary$validation_r2, lwd = 5, lty = 3, col = 2)
+```
+
+```{r}
+rpart_fit<-rpart(myFormula,data = train,control = rpart.control(minsplit = 2, maxdepth = 6, cp = -1))
+rpart.plot(rpart_fit,border.col="blue", split.col="red",
+           split.cex=1.2, main="Decision tree for bodyfat")
+```
+
+```{r}
+set.seed(2016)
+rf<-randomForest(myFormula,data=train,mtry=3)
+plot(rf)
+```
+
+```{r}
+validation$Predicted <- predict(rf, newdata = validation, type = 'response')
+cor(validation$Predicted, validation$Response)^2
+```
+
